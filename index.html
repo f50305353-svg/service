@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Управления</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Tech Grid Pattern Overlay */
+        .bg-grid {
+            background-image: radial-gradient(rgba(59, 130, 246, 0.12) 1px, transparent 0);
+            background-size: 32px 32px;
+        }
+
+        /* Background Particle Canvas */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between relative bg-grid selection:bg-brand-500 selection:text-white">
+
+    <!-- Interactive Canvas Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Background Orbs -->
+    <div class="fixed top-10 left-10 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none z-0"></div>
+    <div class="fixed bottom-10 right-10 w-96 h-96 bg-sky-600/10 rounded-full blur-3xl pointer-events-none z-0"></div>
+
+    <div class="relative z-10 flex flex-col min-h-screen">
+
+        <!-- NAVBAR -->
+        <header class="sticky top-0 z-50 glass-card border-b border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <!-- Brand Title -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('wa')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                        <i class="fa-solid fa-screwdriver-wrench text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                            <span class="text-brand-500">Service</span>
+                        </span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-widest font-semibold">BY ERBOL</span>
+                    </div>
+                </div>
+
+                <!-- Control Buttons / Navigation Tabs -->
+                <div class="flex items-center space-x-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+                    <button id="nav-btn-wa" onclick="switchTab('wa')" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                        <i class="fa-brands fa-whatsapp text-base text-emerald-400"></i>
+                        <span class="hidden sm:inline">Ожидание</span> <span>WhatsApp</span>
+                        <span id="badge-wa" class="ml-1 px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">0</span>
+                    </button>
+                    <button id="nav-btn-icloud" onclick="switchTab('icloud')" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                        <i class="fa-brands fa-apple text-base text-sky-400"></i>
+                        <span class="hidden sm:inline">Ожидание</span> <span>iCloud</span>
+                        <span id="badge-icloud" class="ml-1 px-2 py-0.5 text-[10px] bg-sky-500/20 text-sky-400 rounded-full border border-sky-500/30">0</span>
+                    </button>
+                    <button id="nav-btn-ready" onclick="switchTab('ready')" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                        <i class="fa-solid fa-circle-check text-base text-green-400"></i>
+                        <span>Готовые</span>
+                        <span id="badge-ready" class="ml-1 px-2 py-0.5 text-[10px] bg-green-500/20 text-green-400 rounded-full border border-green-500/30">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+            <!-- STATS OVERVIEW CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <!-- Stat 1: WhatsApp -->
+                <div onclick="switchTab('wa')" class="glass-card p-5 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/50 transition cursor-pointer flex items-center justify-between group">
+                    <div>
+                        <span class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Ожидают WhatsApp</span>
+                        <h3 id="stat-wa-count" class="text-3xl font-extrabold text-emerald-400 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">Коды, верификации & восстановление</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl group-hover:scale-110 transition">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                </div>
+
+                <!-- Stat 2: iCloud -->
+                <div onclick="switchTab('icloud')" class="glass-card p-5 rounded-2xl border border-sky-500/20 hover:border-sky-500/50 transition cursor-pointer flex items-center justify-between group">
+                    <div>
+                        <span class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Ожидают iCloud</span>
+                        <h3 id="stat-icloud-count" class="text-3xl font-extrabold text-sky-400 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">Снятие Activation Lock & Server ID</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 text-2xl group-hover:scale-110 transition">
+                        <i class="fa-brands fa-apple"></i>
+                    </div>
+                </div>
+
+                <!-- Stat 3: Ready Orders -->
+                <div onclick="switchTab('ready')" class="glass-card p-5 rounded-2xl border border-green-500/20 hover:border-green-500/50 transition cursor-pointer flex items-center justify-between group">
+                    <div>
+                        <span class="text-xs text-slate-400 uppercase font-semibold tracking-wider">Готовые Заказы</span>
+                        <h3 id="stat-ready-count" class="text-3xl font-extrabold text-green-400 mt-1">0</h3>
+                        <p class="text-[11px] text-slate-500 mt-1">Завершенные услуги / Выданные</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 text-2xl group-hover:scale-110 transition">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 1: WHATSAPP WAITING LIST -->
+            <section id="tab-wa" class="space-y-6">
+                <!-- Action Header & Add Button -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i class="fa-brands fa-whatsapp text-emerald-400"></i>
+                            <span>Список ожидания WhatsApp</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Клиенты, ожидающие кода верификации или переноса чатов</p>
+                    </div>
+                    <button onclick="openModal('wa')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center space-x-2 active:scale-95">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Добавить клиента в WhatsApp</span>
+                    </button>
+                </div>
+
+                <!-- Search Filter -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                    <input type="text" id="search-wa" oninput="renderWA()" placeholder="Поиск по имени или номеру телефона..." class="w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition">
+                </div>
+
+                <!-- WhatsApp Cards Grid -->
+                <div id="container-wa" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Items render here -->
+                </div>
+            </section>
+
+            <!-- TAB 2: ICLOUD WAITING LIST -->
+            <section id="tab-icloud" class="space-y-6 hidden">
+                <!-- Action Header & Add Button -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i class="fa-brands fa-apple text-sky-400"></i>
+                            <span>Список ожидания iCloud</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Клиенты на официальную отвязку или серверное снятие блокировки</p>
+                    </div>
+                    <button onclick="openModal('icloud')" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs sm:text-sm rounded-xl transition shadow-lg shadow-sky-600/20 flex items-center space-x-2 active:scale-95">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Добавить запись iCloud</span>
+                    </button>
+                </div>
+
+                <!-- Search Filter -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                    <input type="text" id="search-icloud" oninput="renderICloud()" placeholder="Поиск по имени, модели устройства или Apple ID..." class="w-full pl-11 pr-4 py-3 bg-slate-900/80 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+                </div>
+
+                <!-- iCloud Cards Grid -->
+                <div id="container-icloud" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Items render here -->
+                </div>
+            </section>
+
+            <!-- TAB 3: READY ORDERS ARCHIVE -->
+            <section id="tab-ready" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-circle-check text-green-400"></i>
+                            <span>Готовые Заказы (Архив)</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Все клиенты, успешно прошедшие процедуру WhatsApp или iCloud</p>
+                    </div>
+
+                    <!-- Filter Sub-tabs -->
+                    <div class="flex items-center space-x-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                        <button id="filter-ready-all" onclick="setReadyFilter('all')" class="px-3 py-1.5 rounded-lg font-medium text-white bg-slate-800">Все</button>
+                        <button id="filter-ready-wa" onclick="setReadyFilter('wa')" class="px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white">WhatsApp</button>
+                        <button id="filter-ready-icloud" onclick="setReadyFilter('icloud')" class="px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white">iCloud</button>
+                    </div>
+                </div>
+
+                <!-- Ready Cards Grid -->
+                <div id="container-ready" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Items render here -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="bg-slate-950/80 border-t border-slate-800 py-6 text-xs text-slate-500 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 text-center sm:flex sm:justify-between sm:text-left">
+                <p>© 2026 Service Center. Система учета статусов ожидания.</p>
+                <p class="mt-2 sm:mt-0 text-slate-600">Автоматическое сохранение в LocalStorage</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- MODAL: ADD WHATSAPP CLIENT -->
+    <div id="modal-wa" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl border border-slate-700 shadow-2xl relative animate-fadeIn">
+            <button onclick="closeModal('wa')" class="absolute top-5 right-5 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xl">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Добавить в WhatsApp</h3>
+                    <p class="text-xs text-slate-400">Новый клиент в очередь ожидания</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleAddWA(event)" class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Имя клиента *</label>
+                    <input type="text" id="wa-name" required placeholder="Например: Иван П." class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Номер телефона *</label>
+                    <input type="text" id="wa-phone" required placeholder="+7 (900) 000-00-00" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Примечание / Статус</label>
+                    <input type="text" id="wa-note" placeholder="Например: Ожидаем SMS код..." class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('wa')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium">Отмена</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD ICLOUD CLIENT -->
+    <div id="modal-icloud" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
+        <div class="glass-card w-full max-w-md p-6 rounded-3xl border border-slate-700 shadow-2xl relative animate-fadeIn">
+            <button onclick="closeModal('icloud')" class="absolute top-5 right-5 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center text-xl">
+                    <i class="fa-brands fa-apple"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Добавить в iCloud</h3>
+                    <p class="text-xs text-slate-400">Новая запись на разблокировку</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleAddICloud(event)" class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Имя клиента *</label>
+                    <input type="text" id="icloud-name" required placeholder="Например: Александр В." class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Модель устройства *</label>
+                    <input type="text" id="icloud-device" required placeholder="Например: iPhone 13 Pro Max" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Логин / Apple ID / IMEI *</label>
+                    <input type="text" id="icloud-login" required placeholder="user@icloud.com или IMEI" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Статус обработки</label>
+                    <input type="text" id="icloud-status" placeholder="Например: Заявка на сервере..." class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-sky-500">
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('icloud')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium">Отмена</button>
+                    <button type="submit" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-sky-600/20">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // --- 1. PARTICLES & NODE CANVAS BACKGROUND ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 1.5 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${0.12 * (1 - dist / 120)})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+
+        // --- 2. STATE & LOCALSTORAGE MANAGEMENT ---
+        const DEFAULT_DATA = {
+            waList: [
+                { id: 'wa-1', name: 'Алексей С.', phone: '+7 (901) 111-22-33', note: 'Ожидаем SMS код от ватсап', date: '01.11.2026, 14:20' },
+                { id: 'wa-2', name: 'Мария К.', phone: '+7 (902) 333-44-55', note: 'Восстановление чатов из базы', date: '01.11.2026, 15:45' }
+            ],
+            icloudList: [
+                { id: 'ic-1', name: 'Дмитрий В.', device: 'iPhone 13 Pro', login: 'dmitry.v@icloud.com', status: 'Заявка отправлена на сервер', date: '31.10.2026, 11:10' },
+                { id: 'ic-2', name: 'Елена П.', device: 'iPhone 12', login: 'elena_12@gmail.com', status: 'Ожидание ответа Apple (1-3 дня)', date: '01.11.2026, 09:30' }
+            ],
+            readyList: [
+                { id: 'rd-1', type: 'wa', name: 'Сергей М.', details: '+7 (903) 777-88-99', readyDate: '30.10.2026' },
+                { id: 'rd-2', type: 'icloud', name: 'Ольга Т.', details: 'iPhone 11 (olga_apple@icloud.com)', readyDate: '29.10.2026' }
+            ]
+        };
+
+        let appData = JSON.parse(localStorage.getItem('mobile_service_db')) || DEFAULT_DATA;
+        let currentTab = 'wa';
+        let readyFilter = 'all';
+
+        function saveData() {
+            localStorage.setItem('mobile_service_db', JSON.stringify(appData));
+            updateBadgesAndStats();
+        }
+
+        function updateBadgesAndStats() {
+            document.getElementById('badge-wa').innerText = appData.waList.length;
+            document.getElementById('badge-icloud').innerText = appData.icloudList.length;
+            document.getElementById('badge-ready').innerText = appData.readyList.length;
+
+            document.getElementById('stat-wa-count').innerText = appData.waList.length;
+            document.getElementById('stat-icloud-count').innerText = appData.icloudList.length;
+            document.getElementById('stat-ready-count').innerText = appData.readyList.length;
+        }
+
+        // --- 3. TAB NAVIGATION ---
+        function switchTab(tab) {
+            currentTab = tab;
+
+            document.getElementById('tab-wa').classList.add('hidden');
+            document.getElementById('tab-icloud').classList.add('hidden');
+            document.getElementById('tab-ready').classList.add('hidden');
+
+            document.getElementById('nav-btn-wa').className = 'flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white';
+            document.getElementById('nav-btn-icloud').className = 'flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white';
+            document.getElementById('nav-btn-ready').className = 'flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-slate-400 hover:text-white';
+
+            if (tab === 'wa') {
+                document.getElementById('tab-wa').classList.remove('hidden');
+                document.getElementById('nav-btn-wa').className = 'flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                renderWA();
+            } else if (tab === 'icloud') {
+                document.getElementById('tab-icloud').classList.remove('hidden');
+                document.getElementById('nav-btn-icloud').className = 'flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-sky-500/20 text-sky-400 border border-sky-500/30';
+                renderICloud();
+            } else if (tab === 'ready') {
+                document.getElementById('tab-ready').classList.remove('hidden');
+                document.getElementById('nav-btn-ready').className = 'flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-green-500/20 text-green-400 border border-green-500/30';
+                renderReady();
+            }
+        }
+
+        // --- 4. RENDER WHATSAPP QUEUE ---
+        function renderWA() {
+            const container = document.getElementById('container-wa');
+            const search = document.getElementById('search-wa').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = appData.waList.filter(item =>
+                item.name.toLowerCase().includes(search) || item.phone.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full glass-card p-8 text-center rounded-2xl border border-slate-800">
+                        <i class="fa-brands fa-whatsapp text-4xl text-slate-600 mb-2"></i>
+                        <p class="text-slate-400 text-sm">Список ожидания WhatsApp пуст</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-card p-5 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 transition flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-lg border border-emerald-500/20 flex items-center gap-1">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </span>
+                            <span class="text-[10px] text-slate-500">${item.date}</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-1">${escapeHtml(item.name)}</h4>
+                        <p class="text-sm text-emerald-400 font-mono mb-3"><i class="fa-solid fa-phone text-xs mr-1"></i> ${escapeHtml(item.phone)}</p>
+                        <p class="text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-800 mb-4">
+                            <span class="text-slate-500 block text-[10px] uppercase font-semibold mb-0.5">Примечание:</span>
+                            ${escapeHtml(item.note || 'Ожидание обработки...')}
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2 pt-2 border-t border-slate-800/60">
+                        <button onclick="markAsReady('wa', '${item.id}')" class="flex-1 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs font-semibold rounded-xl transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Готово</span>
+                        </button>
+                        <button onclick="deleteItem('wa', '${item.id}')" class="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- 5. RENDER ICLOUD QUEUE ---
+        function renderICloud() {
+            const container = document.getElementById('container-icloud');
+            const search = document.getElementById('search-icloud').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = appData.icloudList.filter(item =>
+                item.name.toLowerCase().includes(search) ||
+                item.device.toLowerCase().includes(search) ||
+                item.login.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full glass-card p-8 text-center rounded-2xl border border-slate-800">
+                        <i class="fa-brands fa-apple text-4xl text-slate-600 mb-2"></i>
+                        <p class="text-slate-400 text-sm">Список ожидания iCloud пуст</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-card p-5 rounded-2xl border border-sky-500/20 hover:border-sky-500/40 transition flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 bg-sky-500/10 text-sky-400 text-[10px] font-bold rounded-lg border border-sky-500/20 flex items-center gap-1">
+                                <i class="fa-brands fa-apple"></i> iCloud
+                            </span>
+                            <span class="text-[10px] text-slate-500">${item.date}</span>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-0.5">${escapeHtml(item.name)}</h4>
+                        <p class="text-xs text-sky-400 font-medium mb-3"><i class="fa-solid fa-mobile-screen mr-1"></i> ${escapeHtml(item.device)}</p>
+
+                        <div class="space-y-2 mb-4">
+                            <p class="text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Логин / Apple ID:</span>
+                                <span class="font-mono text-slate-200">${escapeHtml(item.login)}</span>
+                            </p>
+                            <p class="text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Статус:</span>
+                                ${escapeHtml(item.status || 'Заявка обрабатывается')}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 pt-2 border-t border-slate-800/60">
+                        <button onclick="markAsReady('icloud', '${item.id}')" class="flex-1 py-2 bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 text-xs font-semibold rounded-xl transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Готово</span>
+                        </button>
+                        <button onclick="deleteItem('icloud', '${item.id}')" class="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- 6. RENDER READY ORDERS ---
+        function setReadyFilter(type) {
+            readyFilter = type;
+            document.getElementById('filter-ready-all').className = readyFilter === 'all' ? 'px-3 py-1.5 rounded-lg font-medium text-white bg-slate-800' : 'px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white';
+            document.getElementById('filter-ready-wa').className = readyFilter === 'wa' ? 'px-3 py-1.5 rounded-lg font-medium text-white bg-slate-800' : 'px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white';
+            document.getElementById('filter-ready-icloud').className = readyFilter === 'icloud' ? 'px-3 py-1.5 rounded-lg font-medium text-white bg-slate-800' : 'px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white';
+            renderReady();
+        }
+
+        function renderReady() {
+            const container = document.getElementById('container-ready');
+            container.innerHTML = '';
+
+            const filtered = appData.readyList.filter(item => {
+                if (readyFilter === 'all') return true;
+                return item.type === readyFilter;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full glass-card p-8 text-center rounded-2xl border border-slate-800">
+                        <i class="fa-solid fa-box-archive text-4xl text-slate-600 mb-2"></i>
+                        <p class="text-slate-400 text-sm">Готовые заказы отсутствуют</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const isWA = item.type === 'wa';
+                const card = document.createElement('div');
+                card.className = 'glass-card p-5 rounded-2xl border border-green-500/20 hover:border-green-500/40 transition flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-2.5 py-1 ${isWA ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} text-[10px] font-bold rounded-lg border flex items-center gap-1">
+                                <i class="${isWA ? 'fa-brands fa-whatsapp' : 'fa-brands fa-apple'}"></i> ${isWA ? 'WhatsApp' : 'iCloud'}
+                            </span>
+                            <span class="text-[10px] text-green-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-circle-check"></i> Завершено
+                            </span>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-1">${escapeHtml(item.name)}</h4>
+                        <p class="text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-800 mb-4">
+                            ${escapeHtml(item.details)}
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs text-slate-500">
+                        <span>Дата завершения: ${item.readyDate}</span>
+                        <button onclick="deleteReady('${item.id}')" class="p-1.5 hover:text-red-400 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- 7. ACTION HANDLERS ---
+        function markAsReady(type, id) {
+            const now = new Date().toLocaleDateString('ru-RU');
+            if (type === 'wa') {
+                const index = appData.waList.findIndex(x => x.id === id);
+                if (index !== -1) {
+                    const item = appData.waList.splice(index, 1)[0];
+                    appData.readyList.unshift({
+                        id: 'rd-' + Date.now(),
+                        type: 'wa',
+                        name: item.name,
+                        details: `Тел: ${item.phone} | Note: ${item.note || 'Готов'}`,
+                        readyDate: now
+                    });
+                }
+            } else if (type === 'icloud') {
+                const index = appData.icloudList.findIndex(x => x.id === id);
+                if (index !== -1) {
+                    const item = appData.icloudList.splice(index, 1)[0];
+                    appData.readyList.unshift({
+                        id: 'rd-' + Date.now(),
+                        type: 'icloud',
+                        name: item.name,
+                        details: `${item.device} (${item.login})`,
+                        readyDate: now
+                    });
+                }
+            }
+            saveData();
+            switchTab(currentTab);
+        }
+
+        function deleteItem(type, id) {
+            if (type === 'wa') {
+                appData.waList = appData.waList.filter(x => x.id !== id);
+            } else if (type === 'icloud') {
+                appData.icloudList = appData.icloudList.filter(x => x.id !== id);
+            }
+            saveData();
+            switchTab(currentTab);
+        }
+
+        function deleteReady(id) {
+            appData.readyList = appData.readyList.filter(x => x.id !== id);
+            saveData();
+            renderReady();
+        }
+
+        // --- 8. MODAL FORMS HANDLERS ---
+        function openModal(type) {
+            document.getElementById(`modal-${type}`).classList.remove('hidden');
+        }
+
+        function closeModal(type) {
+            document.getElementById(`modal-${type}`).classList.add('hidden');
+        }
+
+        function handleAddWA(e) {
+            e.preventDefault();
+            const name = document.getElementById('wa-name').value;
+            const phone = document.getElementById('wa-phone').value;
+            const note = document.getElementById('wa-note').value;
+
+            appData.waList.unshift({
+                id: 'wa-' + Date.now(),
+                name,
+                phone,
+                note,
+                date: new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveData();
+            closeModal('wa');
+            document.getElementById('wa-name').value = '';
+            document.getElementById('wa-phone').value = '';
+            document.getElementById('wa-note').value = '';
+            renderWA();
+        }
+
+        function handleAddICloud(e) {
+            e.preventDefault();
+            const name = document.getElementById('icloud-name').value;
+            const device = document.getElementById('icloud-device').value;
+            const login = document.getElementById('icloud-login').value;
+            const status = document.getElementById('icloud-status').value;
+
+            appData.icloudList.unshift({
+                id: 'ic-' + Date.now(),
+                name,
+                device,
+                login,
+                status,
+                date: new Date().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveData();
+            closeModal('icloud');
+            document.getElementById('icloud-name').value = '';
+            document.getElementById('icloud-device').value = '';
+            document.getElementById('icloud-login').value = '';
+            document.getElementById('icloud-status').value = '';
+            renderICloud();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // INITIALIZATION
+        window.onload = function() {
+            animateCanvas();
+            saveData();
+            switchTab('wa');
+        };
+    </script>
+</body>
+</html>
